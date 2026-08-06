@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PD 전용 생방송 연출 & 큐카드 콘솔 (실제 메모장 실시간 기록 연출 모드)</title>
+  
+  <!-- Google Fonts import -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+
+  <!-- ==========================================================================
+       통합 CSS 스타일시트 (리얼 윈도우 메모장 시각화 테마 포함)
+       ========================================================================== -->
+  <style>
+    :root {
+      --bg-dark: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f1f5f9;
+      --border-color: #cbd5e1;
+      
+      --primary-color: #2563eb;
+      --primary-glow: rgba(37, 99, 235, 0.15);
+      
+      --accent-color: #7c3aed;
+      --accent-glow: rgba(124, 58, 237, 0.15);
+
+      --success-color: #059669;
+      --success-glow: rgba(5, 150, 105, 0.15);
+      
+      --danger-color: #dc2626;
+      --danger-glow: rgba(220, 38, 38, 0.15);
+      
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      
+      --font-main: 'Noto Sans KR', sans-serif;
+      --font-code: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-main);
+      min-height: 100vh;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-dark);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    .app-container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* Header 스타일 */
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.2rem 1.75rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .header-title-box {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .broadcast-icon {
+      font-size: 2rem;
+      background: rgba(124, 58, 237, 0.08);
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      padding: 0.5rem;
+      border-radius: 12px;
+    }
+
+    .header-title {
+      font-size: 1.4rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: #0f172a;
+    }
+
+    .header-subtitle {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .action-header-btn {
+      background: #f1f5f9;
+      border: 1px solid var(--border-color);
+      color: #334155;
+      padding: 0.5rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s;
+    }
+
+    .action-header-btn:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+      border-color: var(--primary-color);
+    }
+
+    .btn-sync-sheet {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      color: white;
+      border: none;
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+    }
+
+    .btn-sync-sheet:hover {
+      background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+      color: white;
+    }
+
+    .dashboard-grid-3col {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 1100px) {
+      .dashboard-grid-3col {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.75rem;
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #0f172a;
+    }
+
+    /* QCard Styles */
+    .qcard-control-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f1f5f9;
+      padding: 0.6rem 0.8rem;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-cue {
+      background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+      color: white;
+      border: none;
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .script-list-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      max-height: 480px;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+    }
+
+    .script-item {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem 1.2rem;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+
+    .script-item.active {
+      border-color: var(--accent-color);
+      background: #f3e8ff;
+      box-shadow: 0 0 15px rgba(124, 58, 237, 0.15);
+      transform: scale(1.01);
+    }
+
+    .script-cue-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 800;
+      font-family: var(--font-code);
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      background: #e2e8f0;
+      color: #334155;
+      margin-bottom: 0.4rem;
+    }
+
+    .script-item.active .script-cue-badge {
+      background: var(--accent-color);
+      color: #ffffff;
+    }
+
+    .script-speaker {
+      font-weight: 800;
+      color: #2563eb;
+      margin-right: 0.5rem;
+    }
+
+    .script-text {
+      font-size: 0.98rem;
+      line-height: 1.6;
+      color: var(--text-main);
+      margin-top: 0.2rem;
+    }
+
+    .script-note {
+      font-size: 0.8rem;
+      color: #b45309;
+      margin-top: 0.4rem;
+      background: #fef3c7;
+      padding: 0.3rem 0.6rem;
+      border-radius: 6px;
+      display: inline-block;
+    }
+
+    /* Input Panel */
+    .input-textarea {
+      width: 100%;
+      height: 100px;
+      background-color: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      color: var(--text-main);
+      padding: 0.85rem;
+      font-family: var(--font-main);
+      font-size: 0.92rem;
+      resize: vertical;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .input-textarea:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+      background-color: #ffffff;
+    }
+
+    .preset-title {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .preset-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .btn-preset {
+      background: #f1f5f9;
+      border: 1px solid var(--border-color);
+      color: #334155;
+      padding: 0.3rem 0.65rem;
+      border-radius: 8px;
+      font-size: 0.76rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-preset:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+      border-color: var(--primary-color);
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: white;
+      border: none;
+      padding: 0.75rem;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+      transition: transform 0.15s;
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    /* Output Banner */
+    .result-status-banner {
+      padding: 0.85rem 1.1rem;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .status-approved {
+      background: #d1fae5;
+      border: 1px solid #6ee7b7;
+      color: #065f46;
+    }
+
+    .status-rejected {
+      background: #fee2e2;
+      border: 1px solid #fca5a5;
+      color: #991b1b;
+    }
+
+    /* ★ 윈도우 메모장(Notepad) 시각화 UI 컴포넌트 ★ */
+    .notepad-window {
+      background: #ffffff;
+      border: 1px solid #94a3b8;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      font-family: 'Consolas', 'Courier New', monospace;
+    }
+
+    .notepad-titlebar {
+      background: #e2e8f0;
+      padding: 0.35rem 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #cbd5e1;
+      font-size: 0.78rem;
+      color: #334155;
+      font-weight: 600;
+    }
+
+    .notepad-controls {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .notepad-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .notepad-menubar {
+      background: #f8fafc;
+      padding: 0.25rem 0.8rem;
+      font-size: 0.75rem;
+      color: #475569;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      gap: 1rem;
+    }
+
+    .notepad-editor {
+      padding: 1rem;
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 0.83rem;
+      line-height: 1.6;
+      min-height: 180px;
+      max-height: 250px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* TV Prompter Monitor */
+    .tv-screen {
+      background: #f8fafc;
+      border: 2px solid #cbd5e1;
+      border-radius: 16px;
+      padding: 1.5rem;
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.03);
+      overflow: hidden;
+    }
+
+    .tv-watermark {
+      position: absolute;
+      top: 0.85rem;
+      right: 1.25rem;
+      font-weight: 900;
+      color: rgba(100, 116, 139, 0.2);
+      font-size: 1.1rem;
+      letter-spacing: 2px;
+    }
+
+    .ticker-subtitle-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 1.75rem;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+
+    .ticker-item {
+      background: #ffffff;
+      border-left: 5px solid var(--accent-color);
+      border: 1px solid var(--border-color);
+      border-left-width: 5px;
+      padding: 0.85rem 1.25rem;
+      border-radius: 8px;
+      color: #0f172a;
+      font-size: 1.05rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .ticker-item.latest {
+      border-left-color: var(--success-color);
+      background: #ecfdf5;
+      box-shadow: 0 2px 10px rgba(5, 150, 105, 0.15);
+    }
+
+    .ticker-item.rejected-banner {
+      border-left-color: var(--danger-color);
+      background: #fef2f2;
+      color: #dc2626;
+    }
+
+    .ticker-tag {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: var(--font-code);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Logs & Table */
+    .logs-table-wrapper {
+      max-height: 260px;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+    }
+
+    .logs-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.83rem;
+    }
+
+    .logs-table th {
+      background-color: #f1f5f9;
+      color: var(--text-muted);
+      padding: 0.7rem 0.9rem;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .logs-table td {
+      padding: 0.7rem 0.9rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .logs-table tr:hover {
+      background-color: var(--bg-card-hover);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .badge-approved {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .badge-rejected {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .stat-item {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      padding: 0.85rem;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.4rem;
+      font-weight: 900;
+      margin-top: 0.2rem;
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- 1. 상단 컨트롤룸 헤더 -->
+    <header class="header-container">
+      <div class="header-title-box">
+        <div class="broadcast-icon">📝</div>
+        <div>
+          <h1 class="header-title">PD 전용 생방송 연출 콘솔 (실시간 메모장 라이브 기록 뷰)</h1>
+          <p class="header-subtitle">REAL-TIME NOTEPAD LIVE LOGGING & CONTROL CONSOLE</p>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <button id="download-txt-btn" class="action-header-btn" type="button">
+          <span>💾</span> broadcast_logs.txt 다운로드
+        </button>
+        
+        <button id="sync-sheets-btn" class="action-header-btn btn-sync-sheet" type="button">
+          <span>📤</span> 방송 종료: 구글 시트로 이동
+        </button>
+      </div>
+    </header>
+
+    <!-- 2. 대시보드 3컬럼 레이아웃 -->
+    <div class="dashboard-grid-3col">
+      
+      <!-- [좌측] PD 진행 대본 & 큐카드 패널 -->
+      <div class="card-box">
+        <div class="card-header">
+          <h2 class="card-title">
+            <span>📜</span> PD 진행 대본 & 큐카드 (Broadcast Script & Q-Cards)
+          </h2>
+          <span id="current-cue-label" style="font-size: 0.8rem; color: var(--accent-color); font-weight: bold; background: #f3e8ff; padding: 0.25rem 0.6rem; border-radius: 6px;">
+            CUE #01
+          </span>
+        </div>
+
+        <div class="qcard-control-bar">
+          <button id="prev-cue-btn" type="button" class="btn-cue">◀ 이전 큐 (Prev Cue)</button>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">대본 큐 카드를 클릭하여 즉시 이동 가능</span>
+          <button id="next-cue-btn" type="button" class="btn-cue">다음 큐 ▶ (Next Cue)</button>
+        </div>
+
+        <div id="script-list-container" class="script-list-container">
+          <!-- 자바스크립트로 동적 생성 -->
+        </div>
+      </div>
+
+      <!-- [우측] 시청자 실시간 참여 게시판 & 윈도우 메모장 라이브 뷰어 -->
+      <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        
+        <div class="card-box">
+          <div class="card-header">
+            <h2 class="card-title">
+              <span>💬</span> 시청자 참여글 & AI 심의 (Audience Moderation)
+            </h2>
+            <span style="font-size: 0.78rem; color: var(--primary-color); background: #dbeafe; padding: 0.2rem 0.5rem; border-radius: 20px; font-weight: bold;">
+              ⚡ 메모장 실시간 동기화 중
+            </span>
+          </div>
+
+          <form id="evaluation-form" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 0.6rem;">
+            <textarea
+              id="input-text"
+              class="input-textarea"
+              placeholder="시청자가 작성한 텍스트를 입력하면 아래 메모장에 실시간으로 타이핑 기입됩니다..."
+            ></textarea>
+
+            <div>
+              <div class="preset-title">⚡ 테스트용 샘플 프리셋 (클릭 시 메모장에 바로 기록):</div>
+              <div class="preset-buttons">
+                <button type="button" class="btn-preset" data-preset="오늘 라이브 방송 응원합니다 화이팅!">
+                  ✅ 정상 댓글
+                </button>
+                <button type="button" class="btn-preset" data-preset="와 오늘 무대 연출 진짜 존나 미쳤다 ㅋㅋㅋ 대박!">
+                  ⚠️ 마스킹 댓글
+                </button>
+                <button type="button" class="btn-preset" data-preset="진행자 진행 ㅈㄴ 못하네 ㅆㅂ 진짜 노답">
+                  ❌ 초성 욕설
+                </button>
+                <button type="button" class="btn-preset" data-preset="제 전화번호 010-1234-5678 로 이벤트 상품권 보내주세요!">
+                  ❌ 개인정보 노출
+                </button>
+                <button type="button" class="btn-preset" data-preset="ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ">
+                  ❌ 스팸 도배
+                </button>
+              </div>
+            </div>
+
+            <button type="button" id="submit-btn" class="btn-primary">
+              <span>📝</span> MC 프롬프터 자막 등록 & 메모장에 즉시 기록
+            </button>
+          </form>
+        </div>
+
+        <!-- ★ 윈도우 메모장 실시간 라이브 기록 시각화 창 (Windows Notepad Viewer) ★ -->
+        <div class="notepad-window">
+          <div class="notepad-titlebar">
+            <div>📄 broadcast_logs.txt - 메모장</div>
+            <div class="notepad-controls">
+              <span class="notepad-dot" style="background:#cbd5e1;"></span>
+              <span class="notepad-dot" style="background:#94a3b8;"></span>
+              <span class="notepad-dot" style="background:#ef4444;"></span>
+            </div>
+          </div>
+
+          <div class="notepad-menubar">
+            <span>파일(F)</span>
+            <span>편집(E)</span>
+            <span>서식(O)</span>
+            <span>보기(V)</span>
+            <span>도움말(H)</span>
+            <span id="notepad-copy-text" style="margin-left: auto; color: var(--primary-color); cursor: pointer; font-weight: bold;">[전체 복사]</span>
+          </div>
+
+          <div id="notepad-editor" class="notepad-editor">
+=== [PD 생방송 연출 콘솔 - broadcast_logs.txt] ===
+시각		판정결과	원문 텍스트				최종 처리 텍스트		차단/마스킹 사유
+---------------------------------------------------------------------------------------------
+(시청자 글을 입력하고 버튼을 누르면 이 메모장 안에 실시간으로 차곡차곡 기록됩니다)
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- 3. 스튜디오 MC 프롬프터 자막 송출 모니터 -->
+    <div class="card-box">
+      <div class="card-header">
+        <h2 class="card-title">
+          <span>🎙️</span> 스튜디오 MC 프롬프터 모니터 (Studio MC Prompter Feed)
+        </h2>
+        <span style="font-size: 0.8rem; color: var(--accent-color); font-weight: bold;">
+          ● MC PROMPTER CONNECTED
+        </span>
+      </div>
+
+      <div class="tv-screen">
+        <div class="tv-watermark">MC STUDIO FEED</div>
+
+        <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: bold;">
+          [PD 승인 시청자 질문 및 MC 연출 지시 프롬프터 릴레이 리스트]
+        </div>
+
+        <div id="live-subtitle-container" class="ticker-subtitle-list">
+          <!-- 자바스크립트로 동적 생성 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. 실시간 심의 실적 현황 -->
+    <div class="card-box">
+      <div class="card-header">
+        <h2 class="card-title">
+          <span>📊</span> 실시간 심의 실적 현황 (Moderation Metrics)
+        </h2>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-label">총 검수 기록</div>
+          <div id="stat-total" class="stat-value" style="color: var(--primary-color);">0건</div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-label">송출 승인 (Approve)</div>
+          <div id="stat-approved" class="stat-value" style="color: var(--success-color);">0건</div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-label">사고 예방 차단 (Reject)</div>
+          <div id="stat-rejected" class="stat-value" style="color: var(--danger-color);">0건</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. 실시간 심의 감사 로그 -->
+    <div class="card-box">
+      <div class="card-header">
+        <h2 class="card-title">
+          <span>📜</span> 실시간 감사 로그 데이터베이스 (Audit Logs)
+        </h2>
+        <button id="clear-logs-btn" class="btn-preset" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.4);">
+          🗑️ 전체 기록 초기화
+        </button>
+      </div>
+
+      <div class="logs-table-wrapper">
+        <table class="logs-table">
+          <thead>
+            <tr>
+              <th style="width: 15%;">시각</th>
+              <th style="width: 15%;">판정 결과</th>
+              <th style="width: 30%;">원문 텍스트 (Raw Input)</th>
+              <th style="width: 25%;">최종 처리 텍스트 (Filtered)</th>
+              <th style="width: 15%;">차단/마스킹 사유</th>
+            </tr>
+          </thead>
+          <tbody id="log-table-body">
+            <!-- 자바스크립트로 동적 생성 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ==========================================================================
+       통합 자바스크립트 로직 (실제 메모장 실시간 기입 연출 효과)
+       ========================================================================== -->
+  <script>
+    let scriptCues = [
+      {
+        id: 1,
+        cueCode: "CUE #01 - OPENING",
+        speaker: "MC",
+        text: "시청자 여러분 안녕하십니까! 실시간 참여 방송에 오신 것을 환영합니다.",
+        note: "📌 카메라 1번 메인샷"
+      },
+      {
+        id: 2,
+        cueCode: "CUE #02 - GUEST INTRO",
+        speaker: "MC",
+        text: "오늘 대망의 게스트를 여러분께 소개합니다! 큰 박수로 맞아주세요!",
+        note: "📌 게스트 단독 샷"
+      },
+      {
+        id: 3,
+        cueCode: "CUE #03 - AUDIENCE Q&A",
+        speaker: "MC",
+        text: "전국의 시청자분들이 보내주신 질문을 프롬프터로 확인해 보겠습니다.",
+        note: "📌 프롬프터 자막 주목"
+      },
+      {
+        id: 4,
+        cueCode: "CUE #04 - CLOSING",
+        speaker: "MC",
+        text: "오늘 함께해주신 시청자 여러분 감사합니다. 안녕히 계십시오!",
+        note: "📌 엔딩 자막 표출"
+      }
+    ];
+
+    let currentCueIndex = 0;
+
+    const HARD_BAD_WORDS = [
+      /씨[발빨팔봘발바벌빠]|시[발빨팔벌]|ㅆ[ㅂㅃ]|ㅅㅂ|ㅂㅅ|병[신신씬]|개[새끼세끼새기]|엠창|느금|애미|지랄|좃|좆|창녀|꺼져|ㄲㅈ/i,
+      /시\s*발|씨\s*발|존\s*나|ㅈ\s*ㄴ|ㅅ\s*ㅂ|ㅂ\s*ㅅ/i
+    ];
+
+    const MASKABLE_WORDS = [
+      { pattern: /존나/g, replace: '***' },
+      { pattern: /ㅈㄴ/g, replace: '***' },
+      { pattern: /미친/g, replace: '***' },
+      { pattern: /ㅁㅊ/g, replace: '***' },
+      { pattern: /개좋/g, replace: '***좋' },
+      { pattern: /개꿀/g, replace: '***꿀' }
+    ];
+
+    const HATE_SPEECH_PATTERNS = [/한남|갓끈|한녀|맘충|틀딱|짱깨|쪽바리/i];
+    const SLANDER_PATTERNS = [/쓰레기냐|하차해라|꺼져라|죽어라|조작|뇌물/i];
+    const SENSITIVE_PATTERNS = [/좌빨|수구|빨갱이|신천지|야동|조건만남/i];
+    const PRIVACY_PATTERNS = [/01[016789][-\s]?\d{3,4}[-\s]?\d{4}/, /\d{6}[-\s]?[1-4]\d{6}/];
+
+    function evaluateText(text) {
+      if (!text || text.trim().length === 0) {
+        return { is_safe: false, reason: "내용이 비어 있습니다.", filtered_text: null };
+      }
+
+      const rawText = text.trim();
+
+      for (const pattern of PRIVACY_PATTERNS) {
+        if (pattern.test(rawText)) {
+          return { is_safe: false, reason: "개인정보(전화번호, 주민번호 등)가 노출되었습니다.", filtered_text: null };
+        }
+      }
+
+      if (rawText.match(/([ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z!?.~])\1{24,}/)) {
+        return { is_safe: false, reason: "스팸 도배글입니다.", filtered_text: null };
+      }
+
+      for (const pattern of HATE_SPEECH_PATTERNS) {
+        if (pattern.test(rawText)) return { is_safe: false, reason: "혐오/차별 발언이 포함되었습니다.", filtered_text: null };
+      }
+      for (const pattern of SLANDER_PATTERNS) {
+        if (pattern.test(rawText)) return { is_safe: false, reason: "명예훼손/인신공격성 비방입니다.", filtered_text: null };
+      }
+      for (const pattern of SENSITIVE_PATTERNS) {
+        if (pattern.test(rawText)) return { is_safe: false, reason: "민감한 정치/종교/선정적 내용입니다.", filtered_text: null };
+      }
+      for (const pattern of HARD_BAD_WORDS) {
+        if (pattern.test(rawText)) return { is_safe: false, reason: "악성 욕설이 포함되었습니다.", filtered_text: null };
+      }
+
+      let processedText = rawText;
+      for (const item of MASKABLE_WORDS) {
+        if (item.pattern.test(processedText)) {
+          processedText = processedText.replace(item.pattern, item.replace);
+        }
+      }
+
+      return { is_safe: true, reason: null, filtered_text: processedText };
+    }
+
+    let logs = [];
+    let currentLiveResult = null;
+
+    try {
+      const saved = localStorage.getItem('pd_broadcast_logs');
+      if (saved) logs = JSON.parse(saved);
+    } catch(e) {}
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const clockEl = document.getElementById('system-clock');
+      setInterval(() => {
+        if (clockEl) clockEl.textContent = new Date().toLocaleTimeString('ko-KR', { hour12: false });
+      }, 1000);
+
+      const scriptListContainer = document.getElementById('script-list-container');
+      const prevCueBtn = document.getElementById('prev-cue-btn');
+      const nextCueBtn = document.getElementById('next-cue-btn');
+      const currentCueLabel = document.getElementById('current-cue-label');
+
+      const textarea = document.getElementById('input-text');
+      const submitBtn = document.getElementById('submit-btn');
+      const jsonOutput = document.getElementById('json-output');
+
+      const notepadEditor = document.getElementById('notepad-editor');
+      const notepadCopyText = document.getElementById('notepad-copy-text');
+
+      const liveSubtitleContainer = document.getElementById('live-subtitle-container');
+
+      const statTotal = document.getElementById('stat-total');
+      const statApproved = document.getElementById('stat-approved');
+      const statRejected = document.getElementById('stat-rejected');
+      const logTableBody = document.getElementById('log-table-body');
+      const clearLogsBtn = document.getElementById('clear-logs-btn');
+
+      const downloadTxtBtn = document.getElementById('download-txt-btn');
+      const syncSheetsBtn = document.getElementById('sync-sheets-btn');
+
+      function renderScriptQCards() {
+        scriptListContainer.innerHTML = '';
+        scriptCues.forEach((cue, index) => {
+          const cardDiv = document.createElement('div');
+          const isActive = index === currentCueIndex;
+          cardDiv.className = isActive ? 'script-item active' : 'script-item';
+          
+          cardDiv.innerHTML = `
+            <span class="script-cue-badge">${cue.cueCode}</span>
+            <div class="script-text">
+              <span class="script-speaker">${cue.speaker}:</span> "${escapeHtml(cue.text)}"
+            </div>
+            ${cue.note ? `<div class="script-note">${cue.note}</div>` : ''}
+          `;
+
+          cardDiv.addEventListener('click', () => {
+            currentCueIndex = index;
+            renderScriptQCards();
+          });
+
+          scriptListContainer.appendChild(cardDiv);
+        });
+
+        currentCueLabel.textContent = scriptCues[currentCueIndex].cueCode;
+      }
+
+      prevCueBtn.addEventListener('click', () => {
+        if (currentCueIndex > 0) {
+          currentCueIndex--;
+          renderScriptQCards();
+        }
+      });
+
+      nextCueBtn.addEventListener('click', () => {
+        if (currentCueIndex < scriptCues.length - 1) {
+          currentCueIndex++;
+          renderScriptQCards();
+        }
+      });
+
+      // ★ 메모장 UI 뷰어 텍스트 실시간 생성 및 스크롤 최하단 이동
+      function renderNotepadViewer() {
+        let content = "=== [PD 생방송 연출 콘솔 - broadcast_logs.txt] ===\n";
+        content += "시각\t\t판정결과\t원문 텍스트\t\t\t최종 처리 텍스트\t\t차단/마스킹 사유\n";
+        content += "---------------------------------------------------------------------------------------------\n";
+
+        if (logs.length === 0) {
+          content += "(시청자 글을 입력하고 버튼을 누르면 이 메모장 안에 실시간으로 차곡차곡 기록됩니다)\n";
+        } else {
+          logs.slice().reverse().forEach(log => {
+            const status = log.result.is_safe ? "승인 (Approve)" : "차단 (Reject) ";
+            const filter = log.result.filtered_text || "-";
+            const reason = log.result.reason || "-";
+            content += `${log.time}\t${status}\t"${log.rawText}"\t"${filter}"\t${reason}\n`;
+          });
+        }
+
+        notepadEditor.textContent = content;
+        notepadEditor.scrollTop = notepadEditor.scrollHeight; // 스크롤 자동 하단 이동
+      }
+
+      function updateUI() {
+        const total = logs.length;
+        const approved = logs.filter(l => l.result.is_safe).length;
+        const rejected = logs.filter(l => !l.result.is_safe).length;
+
+        statTotal.textContent = `${total}건`;
+        statApproved.textContent = `${approved}건`;
+        statRejected.textContent = `${rejected}건`;
+
+        liveSubtitleContainer.innerHTML = '';
+
+        if (currentLiveResult && !currentLiveResult.is_safe && textarea.value.trim().length > 0) {
+          const rejDiv = document.createElement('div');
+          rejDiv.className = 'ticker-item rejected-banner';
+          rejDiv.innerHTML = `
+            <div>⚠️ <strong>[PD 심의 차단]</strong> ${escapeHtml(currentLiveResult.reason)}</div>
+            <span class="ticker-tag">BLOCKED</span>
+          `;
+          liveSubtitleContainer.appendChild(rejDiv);
+        }
+
+        const approvedLogs = logs.filter(l => l.result.is_safe && l.result.filtered_text);
+
+        if (approvedLogs.length === 0 && (!currentLiveResult || !currentLiveResult.is_safe || textarea.value.trim().length === 0)) {
+          liveSubtitleContainer.innerHTML = `<div class="ticker-item"><span style="color: var(--text-muted);">MC 프롬프터로 송출된 시청자 자막이 없습니다.</span></div>`;
+        } else {
+          approvedLogs.slice(0, 4).forEach((log, index) => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = index === 0 ? 'ticker-item latest' : 'ticker-item';
+            itemDiv.innerHTML = `
+              <div>
+                <span style="color: #7c3aed; margin-right: 0.5rem; font-weight: bold;">[MC 프롬프터 자막 #${approvedLogs.length - index}]</span>
+                ${escapeHtml(log.result.filtered_text)}
+              </div>
+              <span class="ticker-tag">${log.time}</span>
+            `;
+            liveSubtitleContainer.appendChild(itemDiv);
+          });
+        }
+
+        logTableBody.innerHTML = '';
+        if (logs.length === 0) {
+          logTableBody.innerHTML = `<tr><td colspan="5" style="padding: 2rem; text-align: center; color: var(--text-muted);">심의 기록이 없습니다.</td></tr>`;
+        } else {
+          logs.forEach(log => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td style="font-family: var(--font-code); font-size: 0.8rem; color: var(--text-muted);">${log.time}</td>
+              <td>
+                ${log.result.is_safe 
+                  ? '<span class="badge badge-approved">승인 (Approve)</span>' 
+                  : '<span class="badge badge-rejected">차단 (Reject)</span>'}
+              </td>
+              <td style="word-break: break-all;">${escapeHtml(log.rawText)}</td>
+              <td style="color: ${log.result.filtered_text ? 'var(--text-main)' : 'var(--text-muted)'}; word-break: break-all;">
+                ${log.result.filtered_text ? escapeHtml(log.result.filtered_text) : '-'}
+              </td>
+              <td style="color: #dc2626; font-size: 0.8rem;">${log.result.reason ? escapeHtml(log.result.reason) : '-'}</td>
+            `;
+            logTableBody.appendChild(tr);
+          });
+        }
+
+        renderNotepadViewer(); // 메모장 시각화 뷰어 갱신
+
+        try {
+          localStorage.setItem('pd_broadcast_logs', JSON.stringify(logs));
+        } catch(e) {}
+      }
+
+      function escapeHtml(str) {
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      }
+
+      function handleRealtimeEvaluate(text, addLog = false) {
+        if (!text || text.trim().length === 0) {
+          currentLiveResult = null;
+          jsonOutput.textContent = "// 텍스트를 입력하면 이곳에 심의 판정 JSON이 실시간으로 출력됩니다.";
+          updateUI();
+          return;
+        }
+
+        const result = evaluateText(text);
+        currentLiveResult = result;
+
+        jsonOutput.textContent = JSON.stringify(result, null, 2);
+
+        if (addLog && text.trim().length > 0) {
+          const currentTime = new Date().toLocaleTimeString('ko-KR', { hour12: false });
+          const newLog = {
+            id: Date.now(),
+            time: currentTime,
+            rawText: text.trim(),
+            result: result
+          };
+
+          logs.unshift(newLog);
+          textarea.value = '';
+          currentLiveResult = null;
+          updateUI();
+        } else {
+          updateUI();
+        }
+      }
+
+      // 메모장 복사 기능
+      notepadCopyText.addEventListener('click', () => {
+        navigator.clipboard.writeText(notepadEditor.textContent);
+        const orig = notepadCopyText.textContent;
+        notepadCopyText.textContent = '[복사 완료!]';
+        setTimeout(() => { notepadCopyText.textContent = orig; }, 1500);
+      });
+
+      // 메모장 .txt 파일 즉시 다운로드 버튼
+      downloadTxtBtn.addEventListener('click', () => {
+        if (logs.length === 0) {
+          alert('다운로드할 심의 기록이 없습니다.');
+          return;
+        }
+
+        const blob = new Blob([notepadEditor.textContent], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `broadcast_logs.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      // 구글 시트로 이동 버튼
+      syncSheetsBtn.addEventListener('click', () => {
+        window.open('https://docs.google.com/spreadsheets/d/12i5rUGrLTCYolnxHj04JYOrffCaiO5PR1hLX2gGZ-1g/edit', '_blank');
+      });
+
+      textarea.addEventListener('input', (e) => {
+        handleRealtimeEvaluate(e.target.value, false);
+      });
+
+      submitBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        handleRealtimeEvaluate(textarea.value, true);
+      });
+
+      document.querySelectorAll('.btn-preset[data-preset]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const presetText = btn.getAttribute('data-preset');
+          textarea.value = presetText;
+          handleRealtimeEvaluate(presetText, true);
+        });
+      });
+
+      clearLogsBtn.addEventListener('click', () => {
+        if (confirm('화면 및 로컬에 저장된 심의 기록을 초기화하시겠습니까?')) {
+          logs = [];
+          localStorage.removeItem('pd_broadcast_logs');
+          currentLiveResult = null;
+          updateUI();
+        }
+      });
+
+      renderScriptQCards();
+      handleRealtimeEvaluate('', false);
+    });
+  </script>
+</body>
+</html>
